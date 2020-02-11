@@ -133,7 +133,7 @@ class ParseitController extends Controller
             {
                 die('Done');
             }
-            if ($start < time() - ($exec_time - 30))
+            if ($start < time() - ($exec_time - 15))
             {
                 die('End exec time');
             }
@@ -179,7 +179,7 @@ class ParseitController extends Controller
             {
                 die('Done');
             }
-            if ($start < time() - ($exec_time - 30))
+            if ($start < time() - ($exec_time - 15))
             {
                 die('End exec time');
             }
@@ -226,7 +226,7 @@ class ParseitController extends Controller
             {
                 die('Done');
             }
-            if ($start < time() - ($exec_time - 30))
+            if ($start < time() - ($exec_time - 15))
             {
                 die('End exec time');
             }

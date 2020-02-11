@@ -1,3 +1,4 @@
 TZ
 vendor
 .env
+composer.lock
