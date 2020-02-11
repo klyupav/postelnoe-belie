@@ -191,19 +191,19 @@ class ParseitController extends Controller
     {
         header('Content-Type: text/html; charset=utf-8');
 //        die(base_path().'/../wp-config.php');
-        require base_path().'/../wp-config.php';
+//        require base_path().'/../wp-config.php';
 
         $config = new Configuration();
         $connectionParams = array(
-            'dbname' => DB_NAME,
-            'user' => DB_USER,
-            'password' => DB_PASSWORD,
-            'host' => DB_HOST,
-            'driver' => PARSER_DB_DRIVER,
-            'charset' => DB_CHARSET,
+            'dbname' => env('DB_DATABASE'),
+            'user' => env('DB_USERNAME'),
+            'password' => env('DB_PASSWORD'),
+            'host' => env('DB_HOST'),
+            'driver' => env('DB_DRIVER'),
+            'charset' => 'utf8mb4',
         );
         $conn = DriverManager::getConnection($connectionParams, $config);
-        $site_url = PARSER_SITE_URL;
+        $site_url = env('PARSER_SITE_URL');
         $site_root_dir = base_path().'/..';
 
         $wp = new WP($conn, $site_url, $site_root_dir);
