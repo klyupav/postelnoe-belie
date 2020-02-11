@@ -1,2 +1,3 @@
-!TZ
-!vendor
+TZ
+vendor
+.env
