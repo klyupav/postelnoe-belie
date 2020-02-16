@@ -90,4 +90,16 @@ class Source extends Model
             return 'insert';
         }
     }
+
+    public static function isAllParseit()
+    {
+        if (static::where(['parseit' => 0, 'available' => 1])->get()->first())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 }

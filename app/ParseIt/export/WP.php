@@ -33,6 +33,14 @@ class WP
         $this->upload_dir = $upload_dir;
     }
 
+    public function deactivateProduct(string $sku, string $donor)
+    {
+        if ($pid = $this->findProductIdBySku($sku, $donor)) {
+            $this->deleteProduct($pid);
+            print("УДАЛЕН - " . $sku . " <br>\n");
+        }
+    }
+
     /*
      * Add product
      * @param array $product
@@ -40,15 +48,9 @@ class WP
     public function addProduct(array $product)
     {
         $price_info = '';
-//        if ( $product['price'] != $product['sale_price'] )
-//        {
-//            $price_info = "regular={$product['price']}, sale={$product['sale_price']}";
-//        }
         if ( $pid = $this->findProductIdBySku($product['sku'], $product['donor']) )
-//        if (false)
         {
             // update product
-//            die('update');
             $this->updateProduct($product, $pid);
             print("ОБНОВЛЕН - ".$product['sku']." {$price_info}<br>\n");
         }
@@ -115,6 +117,10 @@ class WP
      */
     private function updateProduct(array $product, int $pid)
     {
+        if (isset($product['stock']))
+        {
+            $this->updatePostMeta(['_stock_status' => $product['stock'] == 1 ? 'instock' : 'outofstock'], $pid);
+        }
         $product['options'] = unserialize(@$product['options']);
         if (isset($product['options']) && is_array($product['options']))
         {
@@ -156,12 +162,13 @@ class WP
         {
             return false;
         }
-        $post_name = mb_strtolower($product['title']);
-        $post_name = preg_replace('%[\d\s]+%uis', '-', $post_name);
+        $post_name = $this->getSlug($product['title']);
+//        $post_name = mb_strtolower($product['title']);
+//        $post_name = preg_replace('%[\d\s]+%uis', '-', $post_name);
         $post_name = mb_substr($post_name, 0, 29);
         $post_name .=  "-" . mb_strtolower(@$product['sku']);
         $post_name = preg_replace('%[\ ]+%uis', '-', $post_name);
-        $post_name = preg_replace('%[^a-bA-Bа-яА-Я0-9]+%uis', '-', $post_name);
+//        $post_name = preg_replace('%[^a-bA-Bа-яА-Я0-9]+%uis', '-', $post_name);
         $post_name = preg_replace('%[\-]+%uis', '-', $post_name);
         $post_name = trim($post_name, '-');
 
@@ -304,6 +311,7 @@ class WP
     {
         $this->conn->delete('wp_posts', ['ID' => $post_id]);
         $image_ids = $this->deleteProductImage($post_id);
+        $this->conn->delete('wp_posts', ['post_parent' => $post_id]);
         $this->deletePostMeta($post_id);
 //        $this->conn->delete('wp_rp4wp_cache', ['post_id' => $post_id]);
         $this->conn->update('wp_term_taxonomy', ['count' => 0 ], ['taxonomy' => 'product_cat']);
@@ -751,7 +759,7 @@ class WP
             '_download_expiry' => '-1',
             '_thumbnail_id' => isset($_thumbnail_id) ? $_thumbnail_id : '',
             '_stock' => null,
-            '_stock_status' => 'instock',
+            '_stock_status' => isset($param['stock']) && $param['stock'] == 1 ? 'instock' : 'outofstock',
             '_wc_average_rating' => '0',
             '_wc_rating_count' => 'a:0:{}',
             '_wc_review_count' => '0',
@@ -1114,7 +1122,7 @@ class WP
             ],
             'image_meta' => [
                 'aperture' => '7.1',
-                'credit' => 'Igor Alekseev www.igoralekseev.c',
+                'credit' => 'Igor Alekseev',
                 'camera' => 'Canon EOS 5D Mark II',
                 'caption' => '',
                 'created_timestamp' => '1536237860',

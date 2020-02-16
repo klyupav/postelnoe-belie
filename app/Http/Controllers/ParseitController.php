@@ -19,11 +19,14 @@ use YoastSEO_Vendor\GuzzleHttp\Handler\Proxy;
 
 class ParseitController extends Controller
 {
+    static $donor = 'textiloptom.net';
+
     public function start(Request $request)
     {
         $donor = new TextiloptomNetCategory();
         $opt['cookieFile'] = $donor->cookieFile;
 //        $opt['url'] = 'http://b2b.divehouse.ru/catalog/lodochnye_motory_grebnye_vinty_raskhodniki_i_zapchasti/';
+        Product::whereNotNull('id')->update(['exported' => 2]);
         $categories = $donor->getSources($opt);
 //        print_r(count($categories));
         foreach ( $categories as $category )
@@ -74,7 +77,7 @@ class ParseitController extends Controller
     {
         $donor_product = new TextiloptomNetProduct();
         $opt['cookieFile'] = $donor_product->cookieFile;
-        $opt['url'] = 'https://textiloptom.net/satin-pechatnyy-art-sl/kpb-cl-1006';
+        $opt['url'] = 'https://textiloptom.net/polisatin-3d-art-sf/kpb-sf-07';
         $products = $donor_product->getData($opt['url'], $opt);
         if (is_array($products))
         {
@@ -184,7 +187,7 @@ class ParseitController extends Controller
                 die('End exec time');
             }
         }
-        while( true );
+        while(true);
     }
 
     public function exportToWp(Request $request)
@@ -219,43 +222,66 @@ class ParseitController extends Controller
                 $next_product->update(['exported' => 1]);
 
                 $product = $next_product->toArray();
-                $product['donor'] = 'textiloptom.net';
+                $product['donor'] = static::$donor;
                 $wp->addProduct($product);
             }
             else
             {
-                die('Done');
+                break;
             }
             if ($start < time() - ($exec_time - 15))
             {
                 die('End exec time');
             }
         }
-        while( true );
+        while(true);
 
         $wp->conn->delete('wp_options', ['option_value' => '_transient_wc_term_counts']);
         $tree = $wp->updateCategoryTree();
+
+        if ($this->isParsingDone())
+        {
+            foreach (Product::where(['exported' => 2])->get()->all() as $product)
+            {
+                $product->exported = 1;
+                $product->save();
+                $wp->deactivateProduct($product->sku, static::$donor);
+            }
+        }
+        die('done');
     }
 
     public function removeAll(Request $request)
     {
         header('Content-Type: text/html; charset=utf-8');
-        require base_path().'/../wp-config.php';
+//        require base_path().'/../wp-config.php';
 
         $config = new Configuration();
         $connectionParams = array(
-            'dbname' => DB_NAME,
-            'user' => DB_USER,
-            'password' => DB_PASSWORD,
-            'host' => DB_HOST,
-            'driver' => PARSER_DB_DRIVER,
-            'charset' => DB_CHARSET,
+            'dbname' => env('DB_DATABASE'),
+            'user' => env('DB_USERNAME'),
+            'password' => env('DB_PASSWORD'),
+            'host' => env('DB_HOST'),
+            'driver' => env('DB_DRIVER'),
+            'charset' => 'utf8mb4',
         );
         $conn = DriverManager::getConnection($connectionParams, $config);
-        $site_url = PARSER_SITE_URL;
+        $site_url = env('PARSER_SITE_URL');
         $site_root_dir = base_path().'/..';
 
         $wp = new WP($conn, $site_url, $site_root_dir);
-        $wp->deleteAllProducts('bs-opt.ru');
+        $wp->deleteAllProducts(static::$donor);
+    }
+
+    private function isParsingDone()
+    {
+        if (Category::isAllParseit() && Source::isAllParseit())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

@@ -91,4 +91,16 @@ class Category extends Model
             return 'insert';
         }
     }
+
+    public static function isAllParseit()
+    {
+        if (static::where(['parseit' => 0])->get()->first())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 }

@@ -138,6 +138,18 @@ class Product extends Model
 
     public static function getNotExportedProduct()
     {
-        return Product::where(['exported' => 0])->get()->first();
+        return static::where(['exported' => 0])->get()->first();
+    }
+
+    public static function isAllExported()
+    {
+        if (static::where(['exported' => 0])->get()->first())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 }
